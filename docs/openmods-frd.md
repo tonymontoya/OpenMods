@@ -1,7 +1,7 @@
 # OpenMods Functional Requirements Document (FRD)
 
 ## 1. Context
-- **Vision**: Open, decentralized mod distribution and tipping network for Skyrim Special Edition (Skyrim SE) built on Nostr and Lightning.
+- **Vision**: Open, decentralized mod distribution and tipping network for any moddable game, enabling direct author ⇄ player value transfer via Nostr and Lightning while removing centralized gatekeepers.
 - **Ethos alignment**: Censorship resistance, user sovereignty, bitcoin-native value transfer, minimal reliance on trusted intermediaries.
 - **Stakeholders**:
   - Mod authors (publishers, maintainers, collaborators)
@@ -9,7 +9,7 @@
   - Relay operators (infrastructure stewards)
 
 ## 2. Initial Proof of Concept Scope
-- Support a single Skyrim SE mod project with one downloadable release.
+- Demonstrate the vision using a single Skyrim SE mod project with one downloadable release.
 - Publish mod metadata, release notes, and asset references via Nostr events.
 - Provide verifiable download path with integrity checks.
 - Allow sats streaming (zaps) from players to the mod author.
