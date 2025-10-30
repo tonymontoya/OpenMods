@@ -1,6 +1,6 @@
 # OpenMods
 
-OpenMods is a documentation-driven initiative to build a self-sovereign mod distribution and tipping network that empowers authors and players across any moddable game. We are currently aligning requirements, architecture, and delivery plans before resuming code work. This README serves as an entry point for collaborators—especially Nostr developers—to review the approach and offer feedback.
+OpenMods is an initiative to build a self-sovereign mod distribution and tipping network that empowers authors and players across any moddable game. We are currently aligning requirements, architecture, and delivery plans before resuming code work. This README serves as an entry point for collaborators—especially Nostr developers—to review the approach and offer feedback.
 
 ## Vision
 
@@ -53,11 +53,10 @@ We’re actively collecting input on:
    - Sovereign Engineering Principles: `docs/SOVEREIGN_ENGINEERING_PRINCIPLES.md`
    - Backlog & Open Questions: `docs/backlog.md`
 2. Open an issue or discussion with your findings, or submit a PR with suggested edits.
-3. Reach out on Nostr (DM @tonymontoya) for synchronous conversations or to join upcoming review calls.
 
 ## Status
 
-- ✅ Documentation-first phase underway  
+- ✅ Project documentation phase underway  
 - 🔄 Feedback collection in progress  
 - ⏳ CLI scaffolding paused until documentation is validated  
 
