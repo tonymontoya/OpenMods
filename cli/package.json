@@ -1,0 +1,40 @@
+{
+  "name": "@openmods/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open, self-sovereign mod author tooling for the OpenMods network.",
+  "type": "module",
+  "bin": {
+    "openmods": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc --project tsconfig.json",
+    "clean": "rimraf dist",
+    "validate:samples": "tsx scripts/validate-samples.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "bech32": "^2.0.0",
+    "bittorrent-tracker": "^10.0.15",
+    "diff": "^5.1.0",
+    "node-fetch": "^3.3.2",
+    "nostr-tools": "^2.5.2",
+    "ora": "^7.0.1",
+    "parse-torrent": "^11.0.15",
+    "tslib": "^2.6.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

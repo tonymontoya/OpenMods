@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmods.dev/schemas/kind-30079.release-manifest.schema.json",
+  "title": "OpenMods Release Manifest Event (kind 30079)",
+  "description": "Schema for Nostr kind 30079 events that publish a specific mod release in the OpenMods network.",
+  "type": "object",
+  "required": ["id", "pubkey", "created_at", "kind", "tags", "content", "sig"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pubkey": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "created_at": {"type": "integer", "minimum": 0},
+    "kind": {"const": 30079},
+    "tags": {
+      "type": "array",
+      "description": "Event tags include deterministic ID (['d', '<gameId>.<slug>@<version>']), project reference, supersedes, and distribution hints.",
+      "items": {
+        "type": "array",
+        "items": {"type": "string"}
+      }
+    },
+    "content": {
+      "type": "string",
+      "description": "UTF-8 JSON payload describing the release manifest.",
+      "contentEncoding": "utf-8",
+      "contentMediaType": "application/json"
+    },
+    "sig": {"type": "string", "pattern": "^[0-9a-f]{128}$"}
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "content": {
+      "title": "Decoded release manifest payload",
+      "type": "object",
+      "required": [
+        "gameId",
+        "slug",
+        "version",
+        "displayVersion",
+        "hashes",
+        "artifacts",
+        "changelog",
+        "compatibility"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "description": "Version of the release manifest schema.",
+          "default": "1.0.0"
+        },
+        "gameId": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "slug": {"type": "string", "pattern": "^[a-z0-9-]+(\.[a-z0-9-]+)*$"},
+        "version": {
+          "type": "string",
+          "description": "Canonical semantic version string.",
+          "pattern": "^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+        },
+        "displayVersion": {
+          "type": "string",
+          "description": "Version string shown to players (may include flavor text)."
+        },
+        "releaseDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "changelog": {
+          "type": "array",
+          "description": "Markdown snippets grouped by category.",
+          "items": {
+            "type": "object",
+            "required": ["title", "body"],
+            "properties": {
+              "title": {"type": "string"},
+              "body": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "hashes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["algorithm", "value"],
+            "properties": {
+              "algorithm": {
+                "type": "string",
+                "enum": ["sha256", "blake3"]
+              },
+              "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "description": "Binary payloads produced by the build.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["type", "uri"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "torrent",
+                  "magnet",
+                  "https",
+                  "ipfs"
+                ]
+              },
+              "uri": {"type": "string", "format": "uri"},
+              "sizeBytes": {"type": "integer", "minimum": 0},
+              "requiresAuth": {"type": "boolean", "default": false}
+            },
+            "additionalProperties": false
+          }
+        },
+        "install": {
+          "type": "object",
+          "properties": {
+            "manifest": {"type": "string", "description": "Optional embedded install manifest in YAML or JSON."},
+            "instructions": {"type": "string", "description": "Human-readable installation guidance."}
+          },
+          "additionalProperties": false
+        },
+        "compatibility": {
+          "type": "object",
+          "required": ["gameVersionRange"],
+          "properties": {
+            "gameVersionRange": {"type": "string"},
+            "loadOrderHints": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "platforms": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "additionalProperties": false
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slug", "versionRange"],
+            "properties": {
+              "slug": {"type": "string"},
+              "gameId": {"type": "string"},
+              "versionRange": {"type": "string"},
+              "optional": {"type": "boolean", "default": false}
+            },
+            "additionalProperties": false
+          }
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Previous release IDs that this manifest replaces."
+        },
+        "rollup": {
+          "type": "object",
+          "properties": {
+            "collectionRefs": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "additionalProperties": false
+        },
+        "zapSplit": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pubkey", "percentage"],
+            "properties": {
+              "pubkey": {"type": "string", "pattern": "^npub1[02-9ac-hj-np-z]{59}$"},
+              "percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "checksums": {
+          "type": "object",
+          "description": "Additional integrity data such as torrent info-hash or tree hashes.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

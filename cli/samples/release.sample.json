@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameId": "skyrim-se",
+  "slug": "skyrim-se.sample-mod",
+  "version": "0.1.0",
+  "displayVersion": "0.1.0",
+  "releaseDate": "2024-01-01T00:00:00.000Z",
+  "changelog": [
+    {
+      "title": "notes",
+      "body": "- Initial proof-of-concept release"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "torrent",
+      "uri": "artifacts/torrents/skyrim-se.sample-mod-v0.1.0.torrent"
+    }
+  ],
+  "hashes": [
+    {
+      "algorithm": "sha256",
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "compatibility": {
+    "gameVersionRange": ">=1.6.0"
+  }
+}

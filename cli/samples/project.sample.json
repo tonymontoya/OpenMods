@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "gameId": "skyrim-se",
+  "slug": "skyrim-se.sample-mod",
+  "title": "Sample Sovereign Mod",
+  "summary": "Demonstration project manifest used for schema validation tests.",
+  "description": "",
+  "links": {
+    "homepage": "https://openmods.dev/sample-mod"
+  },
+  "authors": [
+    {
+      "pubkey": "npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsyg6f",
+      "role": "maintainer",
+      "displayName": "Sample Author"
+    }
+  ],
+  "relayHints": [
+    "wss://nostr.example"
+  ],
+  "categories": ["gameplay"],
+  "tags": ["example"],
+  "contentWarnings": []
+}

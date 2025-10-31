@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmods.dev/schemas/kind-30078.project-definition.schema.json",
+  "title": "OpenMods Project Definition Event (kind 30078)",
+  "description": "Schema for Nostr kind 30078 events that define a mod project in the OpenMods network.",
+  "type": "object",
+  "required": ["id", "pubkey", "created_at", "kind", "tags", "content", "sig"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "pubkey": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "kind": {
+      "const": 30078
+    },
+    "tags": {
+      "type": "array",
+      "description": "NIP-01/NIP-12 tags carrying deterministic identifiers, relay hints, zap splits, etc.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "content": {
+      "type": "string",
+      "description": "UTF-8 JSON string; see contentSchema for the decoded structure.",
+      "contentEncoding": "utf-8"
+    },
+    "sig": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"content": {"type": "string"}}},
+      "then": {
+        "properties": {
+          "content": {
+            "contentMediaType": "application/json",
+            "format": "json"
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "content": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Decoded content payload",
+      "type": "object",
+      "required": [
+        "gameId",
+        "slug",
+        "title",
+        "summary",
+        "links",
+        "authors",
+        "relayHints"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Semantic version of this metadata document.",
+          "default": "1.0.0"
+        },
+        "gameId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+(\.[a-z0-9-]+)*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional long-form Markdown description rendered by clients.",
+          "maxLength": 65536
+        },
+        "links": {
+          "type": "object",
+          "required": ["homepage"],
+          "properties": {
+            "homepage": {"type": "string", "format": "uri"},
+            "source": {"type": "string", "format": "uri"},
+            "issues": {"type": "string", "format": "uri"},
+            "support": {"type": "string", "format": "uri"}
+          },
+          "additionalProperties": false
+        },
+        "authors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["pubkey", "role"],
+            "properties": {
+              "pubkey": {"type": "string", "pattern": "^npub1[02-9ac-hj-np-z]{59}$"},
+              "role": {"type": "string"},
+              "displayName": {"type": "string"},
+              "zapSplit": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "relayHints": {
+          "type": "array",
+          "description": "Relays authors recommend for project/release discovery (NIP-65).",
+          "items": {"type": "string", "format": "uri"},
+          "minItems": 1
+        },
+        "categories": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "zapConfig": {
+          "type": "object",
+          "properties": {
+            "lnurl": {"type": "string", "format": "uri"},
+            "bolt12": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "license": {
+          "type": "string"
+        },
+        "contentWarnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "Other project slugs this project builds on.",
+          "items": {
+            "type": "object",
+            "required": ["slug"],
+            "properties": {
+              "slug": {"type": "string"},
+              "gameId": {"type": "string"},
+              "versionRange": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
