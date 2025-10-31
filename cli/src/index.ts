@@ -4,6 +4,7 @@ import { buildInitCommand } from "./commands/init.js";
 import { buildReleaseCommand } from "./commands/release/index.js";
 import { buildProjectCommand } from "./commands/project/index.js";
 import { buildValidateCommand } from "./commands/validate.js";
+import { buildLintCommand } from "./commands/lint/index.js";
 import { buildConfigCommand } from "./commands/config/index.js";
 import { buildZapCommand } from "./commands/zap/index.js";
 import { buildDiffCommand } from "./commands/diff/index.js";
@@ -25,6 +26,7 @@ async function main(): Promise<void> {
   program.addCommand(buildReleaseCommand());
   program.addCommand(buildProjectCommand());
   program.addCommand(buildValidateCommand());
+  program.addCommand(buildLintCommand());
   program.addCommand(buildConfigCommand());
   program.addCommand(buildZapCommand());
   program.addCommand(buildDiffCommand());
