@@ -33,7 +33,7 @@
 - Implement torrent generation pipeline (CLI integration with `mktorrent` or Node module) – *Owner: Tooling Engineer*.
 - Publish `kind 30078/30079` events to test relay; validate schema compliance – *Owner: Protocol Engineer*.
 - Integrate zap test command (`kind 9734/9735`) against regtest Lightning stack – *Owner: Lightning Engineer*.
-- Author seedbox setup guide and scripts for always-on seeding – *Owner: Infrastructure Engineer*.
+- Author seedbox setup guide and scripts for always-on seeding – *Owner: Infrastructure Engineer* (see `docs/seeding-playbook.md` for PoC draft).
 
 ### Milestone M2 – PoC Validation (Weeks 7–9)
 - Publish flagship mod release end-to-end using OpenMods pipeline – *Owner: Author Partner*.

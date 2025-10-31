@@ -54,10 +54,39 @@ We’re actively collecting input on:
    - Backlog & Open Questions: `docs/backlog.md`
 2. Open an issue or discussion with your findings, or submit a PR with suggested edits.
 
+## CLI Getting Started
+
+```bash
+cd cli
+pnpm install
+pnpm dev -- --help
+# Optional: pnpm validate:samples
+```
+
+Key commands (dry-run by default until relay integration lands):
+
+- `openmods init --slug <project-slug> --author-pubkey <npub>` – scaffold `openmods.json` with relay defaults.
+- `openmods project scaffold` – generate `project/project.json` populated from config (safe to re-run with `--force`).
+- `openmods project publish --manifest project/project.json [--summary] [--no-dry-run]` – sign or stage a kind 30078 project definition; add `--no-dry-run` (and optional `--relay wss://...`) to push to relays once signed.
+- `openmods project inspect` – preview project manifest metadata before publishing.
+- `openmods release scaffold --version 0.1.0` – create `artifacts/changelog.md` + stub release manifest.
+- `openmods release build --artifact artifacts/mod.zip --artifact artifacts/mod.torrent` – emit a release manifest with hashes.
+- `openmods release publish --manifest artifacts/release/manifest.json [--summary] [--no-dry-run]` – prepare a signed kind 30079 release event; combine with `--no-dry-run` and `--relay` to broadcast.
+- `openmods release verify --event artifacts/release/event-30079.json` – confirm signature validity and manifest parity.
+- `openmods release inspect` – review release manifest hashes, artifacts, and dependencies at a glance.
+- `openmods validate config|project-manifest|release-manifest` – lint local files against bundled schemas.
+- `openmods config rotate-author-key <npub>` – replace the project’s signing key reference in `openmods.json`.
+- `openmods config set-signer --mode delegated --relay <url> --remote-pubkey <npub>` – record delegated signer metadata for future NIP-46 flows (defaults to local signing).
+- `openmods zap simulate --release-event artifacts/release/event-30079.json --amount 500 [--summary] [--secret/--pubkey --lnurl-metadata … --receipt-secret … --invoke-callback]` – craft a kind 9734 zap request (with LNURL metadata hashing, optional LNURL callback, and receipt).
+- `openmods diff project <base> <head> [--summary --format json]` / `openmods diff release <base> <head> [--summary --format json]` – compare manifest versions before publishing.
+- `openmods seed status <torrent-or-magnet> [--tracker ... --transmission-url ... --qbittorrent-url ... --deluge-url ...]` – query tracker health plus Transmission/qBittorrent/Deluge stats, complementing the seeding playbook.
+
+Project and release manifest schemas live in `docs/schemas/`; refer to `docs/seeding-playbook.md` for PoC seeding guidance.
+
 ## Status
 
 - ✅ Project documentation phase underway  
+- ✅ CLI scaffolding plus project/release workflows staged under `cli/`  
 - 🔄 Feedback collection in progress  
-- ⏳ CLI scaffolding paused until documentation is validated  
 
-Stay tuned as we iterate on the blueprint. Your input now will directly shape the implementation path once we move into the PoC build. Sovereign mod distribution only works if the community co-designs it—thanks for weighing in!
+Stay tuned as we iterate on the blueprint. Your input now will directly shape the implementation path as we evolve the PoC build. Sovereign mod distribution only works if the community co-designs it—thanks for weighing in!
