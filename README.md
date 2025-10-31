@@ -75,6 +75,7 @@ Key commands (dry-run by default until relay integration lands):
 - `openmods release verify --event artifacts/release/event-30079.json` – confirm signature validity and manifest parity.
 - `openmods release inspect` – review release manifest hashes, artifacts, and dependencies at a glance.
 - `openmods validate config|project-manifest|release-manifest` – lint local files against bundled schemas.
+- `openmods lint release --manifest artifacts/release/manifest.json [--skip-tracker-checks]` – verify artifact files, hashes, and tracker health before publishing.
 - `openmods config rotate-author-key <npub>` – replace the project’s signing key reference in `openmods.json`.
 - `openmods config set-signer --mode delegated --relay <url> --remote-pubkey <npub>` – record delegated signer metadata for future NIP-46 flows (defaults to local signing).
 - `openmods zap simulate --release-event artifacts/release/event-30079.json --amount 500 [--summary] [--secret/--pubkey --lnurl-metadata … --receipt-secret … --invoke-callback]` – craft a kind 9734 zap request (with LNURL metadata hashing, optional LNURL callback, and receipt).

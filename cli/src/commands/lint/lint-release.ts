@@ -3,8 +3,7 @@ import { resolve } from "path";
 import { Command } from "commander";
 import { releaseManifestSchema } from "../../services/manifest-service.js";
 import { logger } from "../../utils/logger.js";
-import { ConfigService } from "../../services/config-service.js";
-import { parseTrackingWarnings } from "../../services/release-lint-service.js";
+import { lintReleaseManifest } from "../../services/release-lint-service.js";
 
 export function buildLintReleaseCommand(): Command {
   const command = new Command("release");
@@ -13,16 +12,17 @@ export function buildLintReleaseCommand(): Command {
     .description("Lint a release manifest and its referenced artifacts")
     .option("--manifest <file>", "Path to release manifest", "artifacts/release/manifest.json")
     .option("--strict", "Treat warnings as errors", false)
+    .option("--skip-tracker-checks", "Skip tracker probing", false)
     .action(async (options) => {
       try {
         const manifestPath = resolve(process.cwd(), options.manifest);
         const manifestRaw = await fs.readFile(manifestPath, "utf-8");
         const manifest = releaseManifestSchema.parse(JSON.parse(manifestRaw));
 
-        const configService = new ConfigService(process.cwd());
-        const config = (await configService.exists()) ? await configService.load() : undefined;
-
-        const warnings = await parseTrackingWarnings({ manifest, manifestPath, config });
+        const warnings = await lintReleaseManifest(
+          { manifest, manifestPath },
+          { skipTrackerChecks: options.skipTrackerChecks }
+        );
         const errors = warnings.filter((warning) => warning.level === "error");
         const warnOnly = warnings.filter((warning) => warning.level === "warn");
 

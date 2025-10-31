@@ -1,6 +1,7 @@
+import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import { resolve } from "path";
-import { ConfigService, type OpenModsConfig } from "./config-service.js";
+import { hashFileSha256 } from "./hash-service.js";
 import { ReleaseManifest } from "./manifest-service.js";
 import { checkTorrentStatus } from "./seed-status-service.js";
 
@@ -14,54 +15,141 @@ export interface LintWarning {
 interface LintContext {
   manifest: ReleaseManifest;
   manifestPath: string;
-  config?: OpenModsConfig;
 }
 
-export async function parseTrackingWarnings(context: LintContext): Promise<LintWarning[]> {
+interface LintOptions {
+  skipTrackerChecks?: boolean;
+}
+
+export async function lintReleaseManifest(
+  context: LintContext,
+  options: LintOptions = {}
+): Promise<LintWarning[]> {
   const warnings: LintWarning[] = [];
-  const manifestDir = resolve(context.manifestPath, ".." );
+  const manifestDir = resolve(context.manifestPath, "..");
 
-  // Artifact existence check
-  for (const artifact of context.manifest.artifacts ?? []) {
-    if (artifact.type === "magnet") {
-      continue;
-    }
-    if (!artifact.uri) {
-      warnings.push({ level: "error", message: "Artifact missing URI" });
-      continue;
-    }
-    if (artifact.type === "torrent" || artifact.type === "file") {
-      const localPath = resolve(process.cwd(), artifact.uri);
-      try {
-        await fs.access(localPath);
-      } catch (_error) {
-        warnings.push({
-          level: "error",
-          message: `Artifact not found on disk: ${artifact.uri}`
-        });
-      }
-    }
+  warnings.push(...(await checkArtifactFiles(context.manifest, manifestDir)));
+  warnings.push(...checkDependencies(context.manifest));
+  warnings.push(...checkRootHashes(context.manifest));
+
+  if (!options.skipTrackerChecks) {
+    warnings.push(...(await evaluateTrackers(context.manifest)));
   }
-
-  // Dependency existence check (project slug reference)
-  const dependencies = context.manifest.dependencies ?? [];
-  for (const dependency of dependencies) {
-    if (!dependency.slug) {
-      warnings.push({ level: "warn", message: "Dependency missing slug" });
-    }
-  }
-
-  // Tracker health check for torrent artifacts
-  const trackerWarnings = await evaluateTrackers(context.manifest);
-  warnings.push(...trackerWarnings);
 
   return warnings;
 }
 
+async function checkArtifactFiles(
+  manifest: ReleaseManifest,
+  manifestDir: string
+): Promise<LintWarning[]> {
+  const warnings: LintWarning[] = [];
+
+  for (const artifact of manifest.artifacts ?? []) {
+    if (!artifact.uri) {
+      warnings.push({ level: "error", message: "Artifact missing URI" });
+      continue;
+    }
+
+    if (artifact.type === "magnet") {
+      if (!artifact.uri.startsWith("magnet:")) {
+        warnings.push({ level: "warn", message: `Magnet URI malformed: ${artifact.uri}` });
+      }
+      continue;
+    }
+
+    const isLocalFile = !artifact.uri.match(/^https?:/i) && !artifact.uri.startsWith("ipfs://");
+    if (isLocalFile) {
+      const localPath = resolve(manifestDir, artifact.uri);
+      try {
+        await fs.access(localPath);
+      } catch (_error) {
+        warnings.push({ level: "error", message: `Artifact not found: ${artifact.uri}` });
+        continue;
+      }
+
+      const declaredHash = artifact.hashes?.find((hash) => hash.algorithm === "sha256");
+      if (!declaredHash) {
+        warnings.push({ level: "warn", message: `Artifact missing sha256 hash: ${artifact.uri}` });
+      } else {
+        const actualHash = await hashFileSha256(localPath);
+        if (actualHash.value !== declaredHash.value) {
+          warnings.push({
+            level: "error",
+            message: `Artifact hash mismatch for ${artifact.uri} (expected ${declaredHash.value}, got ${actualHash.value})`
+          });
+        }
+      }
+    }
+  }
+
+  return warnings;
+}
+
+function checkDependencies(manifest: ReleaseManifest): LintWarning[] {
+  const warnings: LintWarning[] = [];
+  const dependencies = manifest.dependencies ?? [];
+  const seen = new Set<string>();
+
+  for (const dependency of dependencies) {
+    if (!dependency.slug) {
+      warnings.push({ level: "warn", message: "Dependency declared without slug" });
+      continue;
+    }
+    const key = `${dependency.gameId ?? manifest.gameId}:${dependency.slug}`;
+    if (seen.has(key)) {
+      warnings.push({ level: "warn", message: `Duplicate dependency entry: ${key}` });
+    }
+    seen.add(key);
+
+    if (dependency.gameId && dependency.gameId !== manifest.gameId) {
+      warnings.push({
+        level: "warn",
+        message: `Dependency ${dependency.slug} targets different gameId (${dependency.gameId})`
+      });
+    }
+  }
+
+  return warnings;
+}
+
+function checkRootHashes(manifest: ReleaseManifest): LintWarning[] {
+  const warnings: LintWarning[] = [];
+  const artifactHashes = (manifest.artifacts ?? [])
+    .flatMap((artifact) => artifact.hashes ?? [])
+    .filter((hash) => hash.algorithm === "sha256")
+    .map((hash) => hash.value);
+
+  if (!artifactHashes.length) {
+    warnings.push({ level: "warn", message: "No artifact sha256 hashes available for root hash aggregation" });
+    return warnings;
+  }
+
+  const expectedRoot = computeRootHash(artifactHashes);
+  const manifestRoot = manifest.hashes?.find((hash) => hash.algorithm === "sha256");
+
+  if (!manifestRoot) {
+    warnings.push({ level: "warn", message: "Release manifest missing root sha256 hash" });
+  } else if (manifestRoot.value !== expectedRoot) {
+    warnings.push({
+      level: "error",
+      message: `Root hash mismatch (expected ${expectedRoot}, got ${manifestRoot.value})`
+    });
+  }
+
+  return warnings;
+}
+
+function computeRootHash(hashes: string[]): string {
+  const hash = createHash("sha256");
+  hashes.forEach((value) => hash.update(value));
+  return hash.digest("hex");
+}
+
 async function evaluateTrackers(manifest: ReleaseManifest): Promise<LintWarning[]> {
-  const torrentArtifacts = manifest.artifacts?.filter(
+  const torrentArtifacts = (manifest.artifacts ?? []).filter(
     (artifact) => artifact.type === "torrent" && artifact.uri
-  ) ?? [];
+  );
 
   if (!torrentArtifacts.length) {
     return [];
