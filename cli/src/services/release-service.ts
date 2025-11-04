@@ -5,7 +5,7 @@ import {
   type ReleaseArtifact,
   type ReleaseManifest
 } from "./manifest-service.js";
-import { hashFileSha256, aggregateRootHash } from "./hash-service.js";
+import { hashFileSha256, aggregateRootHash, type FileHash } from "./hash-service.js";
 
 interface BuildManifestArgs {
   slug: string;
@@ -17,10 +17,19 @@ interface BuildManifestArgs {
 }
 
 export async function buildReleaseManifest(args: BuildManifestArgs): Promise<ReleaseManifest> {
+  if (!args.artifactPaths.length) {
+    throw new Error("Provide at least one artifact path when building a release manifest");
+  }
   const changelog = await readNotes(args.notesPath);
   const artifacts = await Promise.all(
     args.artifactPaths.map(async (relativePath) => await buildArtifact(relativePath))
   );
+
+  if (!artifacts.length) {
+    throw new Error("Failed to resolve release artifacts");
+  }
+
+  const artifactList = artifacts as [ReleaseArtifact, ...ReleaseArtifact[]];
 
   const manifest: ReleaseManifest = {
     schemaVersion: "1.0.0",
@@ -30,12 +39,13 @@ export async function buildReleaseManifest(args: BuildManifestArgs): Promise<Rel
     displayVersion: args.displayVersion ?? args.version,
     releaseDate: new Date().toISOString(),
     changelog: changelog ? [{ title: "notes", body: changelog }] : [],
-    artifacts
+    artifacts: artifactList
   };
 
-  const rootHash = aggregateRootHash(
-    artifacts.flatMap((artifact) => artifact.hashes ?? [])
-  );
+  const sha256Hashes: FileHash[] = artifactList
+    .flatMap((artifact) => artifact.hashes ?? [])
+    .filter((hash): hash is FileHash => hash.algorithm === "sha256");
+  const rootHash = aggregateRootHash(sha256Hashes);
   if (rootHash) {
     manifest.hashes = [rootHash];
   }

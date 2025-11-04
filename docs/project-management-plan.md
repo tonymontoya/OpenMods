@@ -94,7 +94,11 @@
 - **Incident communications**: When security advisories occur, publish via `kind 30085` and mirror summary in docs/logbook.
 
 ## 9. Exit Criteria & Next Actions
-- Complete Phase 0 documentation set (in progress).
-- Secure agreement on Phase 1 scope and resource assignments.
-- Create detailed implementation tickets derived from Milestone M1 deliverables.
-- Prepare seeding playbook draft to unblock torrent-first PoC work.
+- **Status: complete** – Phase 0 documentation set (FRD, technical architecture, project plan) reviewed; residual questions annotated inline within each doc.
+- Secure agreement on Phase 1 scope and resource assignments (Program Manager to schedule kickoff during the next governance sync).
+- Immediate Phase 1 sequencing (Week 1 focus):
+  - Implement torrent build pipeline and artifact hashing flow inside the CLI (`build release` owner: Tooling Engineer).
+  - Harden relay publish workflow with retry/backoff and telemetry (`project/release publish` owner: Protocol Engineer).
+  - Integrate `zap simulate` with the Lightning regtest stack and capture validation logs (Lightning Engineer).
+- Create detailed implementation tickets derived from Milestone M1 deliverables and align with backlog tags.
+- Prepare seeding playbook draft to unblock torrent-first PoC work (Infrastructure Engineer).

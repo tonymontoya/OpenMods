@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { decode as bech32Decode, fromWords } from "bech32";
+import { bech32 } from "bech32";
 import { getFetch } from "./http-client.js";
 
 export interface LnurlPayData {
@@ -94,7 +94,7 @@ async function normalizeLnurl(value: string): Promise<URL> {
 }
 
 function decodeLnurl(lnurl: string): string {
-  const { words } = bech32Decode(lnurl.toLowerCase(), 2000);
-  const data = Buffer.from(fromWords(words));
+  const { words } = bech32.decode(lnurl.toLowerCase(), 2000);
+  const data = Buffer.from(bech32.fromWords(words));
   return data.toString("utf-8");
 }

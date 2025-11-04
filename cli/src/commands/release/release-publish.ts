@@ -1,4 +1,3 @@
-import { Buffer } from "buffer";
 import { promises as fs } from "fs";
 import { dirname, resolve } from "path";
 import { Command } from "commander";
@@ -23,6 +22,9 @@ export function buildReleasePublishCommand(): Command {
     .option("--dry-run", "Do not push to relays; only write the event", true)
     .option("--summary", "Display manifest summary before writing the event")
     .option("--relay <url...>", "Override relay list when publishing")
+    .option("--relay-timeout <ms>", "Relay publish timeout in milliseconds")
+    .option("--relay-retries <count>", "Number of retry attempts per relay")
+    .option("--relay-backoff <ms>", "Backoff delay (ms) applied between retries (linear by attempt)")
     .action(async (options) => {
       try {
         const configService = new ConfigService(process.cwd());
@@ -156,7 +158,7 @@ function decodeSecret(secret: string): Uint8Array {
   if (decoded.type !== "nsec") {
     throw new Error(`Expected nsec bech32 string, received ${decoded.type}`);
   }
-  return decoded.data as Uint8Array;
+  return decoded.data;
 }
 
 function decodePubkey(npub: string): string {
@@ -167,7 +169,7 @@ function decodePubkey(npub: string): string {
   if (decoded.type !== "npub") {
     throw new Error(`Expected npub bech32 string, received ${decoded.type}`);
   }
-  return Buffer.from(decoded.data as Uint8Array).toString("hex");
+  return decoded.data;
 }
 
 function resolveAuthorTag(pubkeyHex: string, configuredPubkey?: string): string {
@@ -189,7 +191,13 @@ async function derivePubkey(secretKey: Uint8Array | undefined, configuredPubkey?
 }
 
 async function maybePublish(
-  options: { dryRun?: boolean; relay?: string[] },
+  options: {
+    dryRun?: boolean;
+    relay?: string[];
+    relayTimeout?: string;
+    relayRetries?: string;
+    relayBackoff?: string;
+  },
   event: UnsignedEvent | Event,
   config: OpenModsConfig
 ): Promise<void> {
@@ -211,7 +219,12 @@ async function maybePublish(
   }
 
   const publisher = new RelayPublisher();
-  const results = await publisher.publish(signedEvent, { relays });
+  const results = await publisher.publish(signedEvent, {
+    relays,
+    timeoutMs: parseOptionalInt(options.relayTimeout, "relay-timeout"),
+    maxAttempts: parseOptionalInt(options.relayRetries, "relay-retries"),
+    backoffMs: parseOptionalInt(options.relayBackoff, "relay-backoff")
+  });
   await publisher.close();
 
   const successes = results.filter((result) => result.status === "ok").length;
@@ -221,8 +234,33 @@ async function maybePublish(
   }
   if (failures) {
     logger.warn(`Failed to publish to ${failures} relay(s). See logs for details.`);
-    results
-      .filter((result) => result.status === "error")
-      .forEach((result) => logger.warn(`  - ${result.relay}: ${String(result.error)}`));
   }
+
+  results.forEach((result) => {
+    const metrics = `${result.durationMs}ms, attempts: ${result.attempts}`;
+    if (result.status === "ok") {
+      logger.info(`  - ${result.relay} ✓ (${metrics})`);
+    } else {
+      logger.warn(`  - ${result.relay} ✕ (${metrics}) ${formatError(result.error)}`);
+    }
+  });
+}
+
+function parseOptionalInt(value: string | undefined, option: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`Invalid value for --${option}: ${value}`);
+  }
+  return parsed;
+}
+
+function formatError(error: unknown): string {
+  if (!error) return "";
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
 }

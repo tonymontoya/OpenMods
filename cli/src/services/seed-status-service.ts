@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import { resolve } from "path";
-import parseTorrent from "parse-torrent";
+import parseTorrent, { type ParsedTorrent, toMagnetURI } from "parse-torrent";
 import { getFetch } from "./http-client.js";
 
 interface TrackerStatus {
@@ -61,10 +61,14 @@ export interface CheckTorrentStatusArgs {
 
 export async function checkTorrentStatus(args: CheckTorrentStatusArgs): Promise<TorrentStatus> {
   const parsed = await parseInput(args.torrent);
-  const infoHashHex = parsed.infoHash.toString("hex");
-  const magnetURI = parseTorrent.toMagnetURI(parsed);
+  const infoHashBuffer = resolveInfoHashBuffer(parsed);
+  if (!infoHashBuffer) {
+    throw new Error("Unable to resolve info hash for torrent status check");
+  }
+  const infoHashHex = infoHashBuffer.toString("hex");
+  const magnetURI = toMagnetURI(parsed);
   const trackerSet = new Set<string>([...(parsed.announce ?? []), ...(args.trackers ?? [])]);
-  const trackerResults = await probeTrackers([...trackerSet], parsed.infoHash);
+  const trackerResults = await probeTrackers([...trackerSet], infoHashBuffer);
   const aggregateSeeders = sumDefined(trackerResults.map((result) => result.seeders));
   const aggregateLeechers = sumDefined(trackerResults.map((result) => result.leechers));
 
@@ -106,13 +110,26 @@ export async function checkTorrentStatus(args: CheckTorrentStatusArgs): Promise<
   };
 }
 
-async function parseInput(input: string): Promise<parseTorrent.Instance> {
+async function parseInput(input: string): Promise<ParsedTorrent> {
   if (input.startsWith("magnet:?")) {
-    return parseTorrent(input);
+    return await parseTorrent(input);
   }
   const absolute = resolve(process.cwd(), input);
   const buffer = await fs.readFile(absolute);
-  return parseTorrent(buffer);
+  return await parseTorrent(buffer);
+}
+
+function resolveInfoHashBuffer(parsed: ParsedTorrent): Buffer | undefined {
+  if (parsed.infoHash && Buffer.isBuffer(parsed.infoHash)) {
+    return parsed.infoHash;
+  }
+  if (typeof parsed.infoHash === "string") {
+    return Buffer.from(parsed.infoHash, "hex");
+  }
+  if (parsed.infoHashBuffer && Buffer.isBuffer(parsed.infoHashBuffer)) {
+    return parsed.infoHashBuffer;
+  }
+  return undefined;
 }
 
 async function probeTrackers(

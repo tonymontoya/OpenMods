@@ -1,8 +1,8 @@
 import { resolve, dirname } from "path";
 import { promises as fs } from "fs";
 import { Command } from "commander";
-import { diffLines } from "diff";
-import { releaseManifestSchema } from "../../services/manifest-service.js";
+import { diffLines, type Change } from "diff";
+import { releaseManifestSchema, type ReleaseManifest } from "../../services/manifest-service.js";
 import { logger } from "../../utils/logger.js";
 
 export function buildDiffReleaseCommand(): Command {
@@ -46,19 +46,24 @@ export function buildDiffReleaseCommand(): Command {
   return command;
 }
 
-async function readManifest(path: string): Promise<unknown> {
+async function readManifest(path: string): Promise<ReleaseManifest> {
   const absolute = resolve(process.cwd(), path);
   const raw = await fs.readFile(absolute, "utf-8");
   return releaseManifestSchema.parse(JSON.parse(raw));
 }
 
-function printManifestDiff(leftLabel: string, rightLabel: string, left: unknown, right: unknown): void {
+function printManifestDiff(
+  leftLabel: string,
+  rightLabel: string,
+  left: ReleaseManifest,
+  right: ReleaseManifest
+): void {
   const leftJson = JSON.stringify(left, null, 2) + "\n";
   const rightJson = JSON.stringify(right, null, 2) + "\n";
   const diff = diffLines(leftJson, rightJson);
 
   logger.info(`Diff for ${leftLabel} -> ${rightLabel}`);
-  diff.forEach((part) => {
+  diff.forEach((part: Change) => {
     const prefix = part.added ? "+" : part.removed ? "-" : " ";
     part.value.split("\n").forEach((line) => {
       if (!line) return;
@@ -76,16 +81,16 @@ interface ReleaseSummaryDiff {
   removedDependencies: string[];
 }
 
-function buildReleaseSummary(left: any, right: any): ReleaseSummaryDiff {
-  const leftArtifacts = new Set((left.artifacts ?? []).map((artifact: any) => artifact.uri));
-  const rightArtifacts = new Set((right.artifacts ?? []).map((artifact: any) => artifact.uri));
-  const leftHashes = new Set((left.hashes ?? []).map((hash: any) => hash.value));
-  const rightHashes = new Set((right.hashes ?? []).map((hash: any) => hash.value));
+function buildReleaseSummary(left: ReleaseManifest, right: ReleaseManifest): ReleaseSummaryDiff {
+  const leftArtifacts = new Set(left.artifacts.map((artifact) => artifact.uri));
+  const rightArtifacts = new Set(right.artifacts.map((artifact) => artifact.uri));
+  const leftHashes = new Set((left.hashes ?? []).map((hash) => hash.value));
+  const rightHashes = new Set((right.hashes ?? []).map((hash) => hash.value));
   const leftDeps = new Set(
-    (left.dependencies ?? []).map((dep: any) => `${dep.slug}@${dep.versionRange ?? ""}`)
+    (left.dependencies ?? []).map((dep) => `${dep.slug}@${dep.versionRange ?? ""}`)
   );
   const rightDeps = new Set(
-    (right.dependencies ?? []).map((dep: any) => `${dep.slug}@${dep.versionRange ?? ""}`)
+    (right.dependencies ?? []).map((dep) => `${dep.slug}@${dep.versionRange ?? ""}`)
   );
 
   return {

@@ -1,4 +1,3 @@
-import { Buffer } from "buffer";
 import { promises as fs } from "fs";
 import { resolve } from "path";
 import { Command } from "commander";
@@ -62,7 +61,7 @@ async function ensureSignatureValid(event: Event): Promise<void> {
       if (decoded.type !== "npub") {
         throw new Error(`Invalid published-by tag type: ${decoded.type}`);
       }
-      const pubkeyHex = Buffer.from(decoded.data as Uint8Array).toString("hex");
+      const pubkeyHex = decoded.data;
       if (pubkeyHex !== event.pubkey) {
         throw new Error("published-by npub does not match event pubkey");
       }

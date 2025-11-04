@@ -70,8 +70,8 @@ Key commands (dry-run by default until relay integration lands):
 - `openmods project publish --manifest project/project.json [--summary] [--no-dry-run]` – sign or stage a kind 30078 project definition; add `--no-dry-run` (and optional `--relay wss://...`) to push to relays once signed.
 - `openmods project inspect` – preview project manifest metadata before publishing.
 - `openmods release scaffold --version 0.1.0` – create `artifacts/changelog.md` + stub release manifest.
-- `openmods release build --artifact artifacts/mod.zip --artifact artifacts/mod.torrent` – emit a release manifest with hashes.
-- `openmods release publish --manifest artifacts/release/manifest.json [--summary] [--no-dry-run]` – prepare a signed kind 30079 release event; combine with `--no-dry-run` and `--relay` to broadcast.
+- `openmods release build --artifact artifacts/mod.zip --generate-torrents --tracker udp://tracker.opentrackr.org:1337/announce` – emit a release manifest with hashes and auto-generate torrent metadata into `artifacts/torrents/`.
+- `openmods release publish --manifest artifacts/release/manifest.json [--summary] [--no-dry-run --relay-timeout 7000 --relay-retries 3 --relay-backoff 500]` – prepare a signed kind 30079 release event; combine with `--no-dry-run` (and `--relay wss://...`) to broadcast with configurable retry/backoff.
 - `openmods release verify --event artifacts/release/event-30079.json` – confirm signature validity and manifest parity.
 - `openmods release inspect` – review release manifest hashes, artifacts, and dependencies at a glance.
 - `openmods validate config|project-manifest|release-manifest` – lint local files against bundled schemas.

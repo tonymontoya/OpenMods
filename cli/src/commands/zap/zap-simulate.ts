@@ -1,4 +1,3 @@
-import { Buffer } from "buffer";
 import { promises as fs } from "fs";
 import { dirname, resolve } from "path";
 import { createHash } from "crypto";
@@ -190,7 +189,7 @@ function decodeSecret(nsec: string): Uint8Array {
   if (decoded.type !== "nsec") {
     throw new Error(`Expected nsec, received ${decoded.type}`);
   }
-  return decoded.data as Uint8Array;
+  return decoded.data;
 }
 
 function deriveZapperPubkeyHex(secret: string | undefined, overrideNpub?: string): string {
@@ -205,7 +204,7 @@ function deriveZapperPubkeyHex(secret: string | undefined, overrideNpub?: string
   if (decoded.type !== "npub") {
     throw new Error(`Expected npub, received ${decoded.type}`);
   }
-  return Buffer.from(decoded.data as Uint8Array).toString("hex");
+  return decoded.data;
 }
 
 function logZapSummary(
@@ -300,7 +299,7 @@ function decodeNpub(npub: string): string {
   if (decoded.type !== "npub") {
     throw new Error(`Expected npub, received ${decoded.type}`);
   }
-  return Buffer.from(decoded.data as Uint8Array).toString("hex");
+  return decoded.data;
 }
 
 function buildSimulatedInvoice(amount: number, lnurlData: LnurlPayData): string {

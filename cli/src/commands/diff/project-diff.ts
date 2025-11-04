@@ -1,8 +1,8 @@
 import { resolve, dirname } from "path";
 import { promises as fs } from "fs";
 import { Command } from "commander";
-import { diffLines } from "diff";
-import { projectManifestSchema } from "../../services/project-manifest-service.js";
+import { diffLines, type Change } from "diff";
+import { projectManifestSchema, type ProjectManifest } from "../../services/project-manifest-service.js";
 import { logger } from "../../utils/logger.js";
 
 export function buildDiffProjectCommand(): Command {
@@ -46,19 +46,24 @@ export function buildDiffProjectCommand(): Command {
   return command;
 }
 
-async function readManifest(path: string): Promise<unknown> {
+async function readManifest(path: string): Promise<ProjectManifest> {
   const absolute = resolve(process.cwd(), path);
   const raw = await fs.readFile(absolute, "utf-8");
   return projectManifestSchema.parse(JSON.parse(raw));
 }
 
-function printManifestDiff(leftLabel: string, rightLabel: string, left: unknown, right: unknown): void {
+function printManifestDiff(
+  leftLabel: string,
+  rightLabel: string,
+  left: ProjectManifest,
+  right: ProjectManifest
+): void {
   const leftJson = JSON.stringify(left, null, 2) + "\n";
   const rightJson = JSON.stringify(right, null, 2) + "\n";
   const diff = diffLines(leftJson, rightJson);
 
   logger.info(`Diff for ${leftLabel} -> ${rightLabel}`);
-  diff.forEach((part) => {
+  diff.forEach((part: Change) => {
     const prefix = part.added ? "+" : part.removed ? "-" : " ";
     part.value.split("\n").forEach((line) => {
       if (!line) return;
@@ -76,11 +81,11 @@ interface ProjectSummaryDiff {
   removedAuthors: string[];
 }
 
-function buildProjectSummary(left: any, right: any): ProjectSummaryDiff {
+function buildProjectSummary(left: ProjectManifest, right: ProjectManifest): ProjectSummaryDiff {
   const leftTags = new Set(left.tags ?? []);
   const rightTags = new Set(right.tags ?? []);
-  const leftAuthors = new Set((left.authors ?? []).map((author: any) => author.pubkey));
-  const rightAuthors = new Set((right.authors ?? []).map((author: any) => author.pubkey));
+  const leftAuthors = new Set(left.authors.map((author) => author.pubkey));
+  const rightAuthors = new Set(right.authors.map((author) => author.pubkey));
 
   return {
     titleChanged: left.title !== right.title,
